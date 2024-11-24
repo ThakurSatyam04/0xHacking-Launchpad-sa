@@ -13,7 +13,12 @@ import CheckpointOne from "./components/forms/CheckpointOne";
 import CheckpointTwo from "./components/forms/CheckpointTwo";
 import CheckpointThree from "./components/forms/CheckpointThree";
 import CheckpointFour from "./components/forms/checkpointFour";
-import CheckpointFive from "./components/forms/checkpointFive";
+import CheckpointFive from "./components/forms/CheckpointFive";
+import ScreenOne from "./routes/Screen-1";
+import ScreenTwo from "./routes/Screen-2";
+import ScreenThree from "./routes/Screen-3";
+import ScreenFour from "./routes/Screen-4";
+import ScreenFive from "./routes/Screen-5";
 
 function App() {
   return (
@@ -29,11 +34,11 @@ function App() {
               <Route path="/resource" element={<Resource />} />
             </Route>
             <Route element={<LaunchpadProtectedRoute />}>
-              <Route path="/checkpoint-1" element={<CheckpointOne />} />
-              <Route path="/checkpoint-2" element={<CheckpointTwo />} />
-              <Route path="/checkpoint-3" element={<CheckpointThree />} />
-              <Route path="/checkpoint-4" element={<CheckpointFour />} />
-              <Route path="/checkpoint-5" element={<CheckpointFive />} />
+              <Route path="/checkpoint-1" element={<ScreenOne />} />
+              <Route path="/checkpoint-2" element={<ScreenTwo />} />
+              <Route path="/checkpoint-3" element={<ScreenThree />} />
+              <Route path="/checkpoint-4" element={<ScreenFour />} />
+              <Route path="/checkpoint-5" element={<ScreenFive />} />
             </Route>
           </Route>
         </Routes>

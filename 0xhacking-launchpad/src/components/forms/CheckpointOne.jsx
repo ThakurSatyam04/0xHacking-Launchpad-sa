@@ -4,6 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import axios from "axios";
+import useLoadingDots from "@/hooks/LoadingDots";
+import { useSelector, useDispatch } from "react-redux";
+import { fetchUserProfile } from "../../features/ProfileSlice"; // Update the path as per your project structure
 
 import { Button } from "@/components/ui/button";
 import {
@@ -23,15 +26,15 @@ import { Label } from "@/components/ui/label";
 import { DataContext } from "@/contexts/DataProvider";
 import { CheckCircle, XCircle } from "lucide-react";
 
-const MAX_FILE_SIZE = 4 * 1024 * 1024 // 4MB
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_FILE_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png',
-  'application/pdf',
-  'application/vnd.ms-powerpoint',
-  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-]
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "application/pdf",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+];
 
 const FormSchema = z.object({
   primaryIdea: z
@@ -72,14 +75,13 @@ const FormSchema = z.object({
   // .optional(),
 
   technologiesUsed: z
-  .string()
-  .min(2, {
-    message: "Technologies Used must be at least 10 characters.",
-  })
-  .max(500, {
-    message: "Technologies Used must not be longer than 500 characters.",
-  }),
-
+    .string()
+    .min(2, {
+      message: "Technologies Used must be at least 10 characters.",
+    })
+    .max(500, {
+      message: "Technologies Used must not be longer than 500 characters.",
+    }),
 });
 
 const domainsWorkingOn = [
@@ -153,9 +155,12 @@ const domainsWorkingOn = [
   },
 ];
 
-
 const CheckPointOne = () => {
-  const [fileUploadStatus, setFileUploadStatus] = useState({ status: 'idle', message: '' })
+  const dispatch = useDispatch();
+  const [fileUploadStatus, setFileUploadStatus] = useState({
+    status: "idle",
+    message: "",
+  });
   const navigate = useNavigate();
   const {
     setCheckpointOneStatus,
@@ -164,12 +169,12 @@ const CheckPointOne = () => {
   } = useContext(DataContext);
   const [fomSubmitStatus, setFormSubmitStatus] = useState(false);
   const [file, setFile] = useState(null);
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(false);
   const [submitStatus, setSubmitStatus] = useState({
     status: "init",
     message: undefined,
   });
-  const[errors, setErrors ] = useState({})
+  const [errors, setErrors] = useState({});
 
   const form = useForm({
     resolver: zodResolver(FormSchema),
@@ -178,89 +183,122 @@ const CheckPointOne = () => {
       role: "",
       domainsWorkingOn: [],
       technologiesUsed: "",
-      file:""
+      file: "",
     },
   });
 
   useEffect(() => {
     async function getUserDetails() {
-try {
-  const authResponse = await axios.get(`/api/user/auth`,{withCredentials:true});
-  const response = await axios.get("/api/user/start-time",{withCredentials:true});
-  const cp1Time = response?.data?.cp1Time;
-  if (!cp1Time) navigate("/profile");
-  const userData = authResponse.data.user;
-  if(userData?.checkpointone?.file){
-    userData.checkpointone.file = userData.checkpointone.file.split("-").slice(1).join("-");
-    form.setValue('file', userData.checkpointone.file)
-    setFileUploadStatus({ status: 'success', progress: 100, filename: userData.checkpointone.file, message: response.data.message || "File Uploaded Succesfully" })
-  }
+      try {
+        const authResponse = await axios.get(`/api/user/auth`, {
+          withCredentials: true,
+        });
+        const response = await axios.get("/api/user/start-time", {
+          withCredentials: true,
+        });
+        const cp1Time = response?.data?.cp1Time;
+        if (!cp1Time) navigate("/profile");
+        const userData = authResponse.data.user;
+        if (userData?.checkpointone?.file) {
+          userData.checkpointone.file = userData.checkpointone.file
+            .split("-")
+            .slice(1)
+            .join("-");
+          form.setValue("file", userData.checkpointone.file);
+          setFileUploadStatus({
+            status: "success",
+            progress: 100,
+            filename: userData.checkpointone.file,
+            message: response.data.message || "File Uploaded Succesfully",
+          });
+        }
 
-  if (cp1Time || cp1Time === null) {
-    const currentTime = new Date().getTime();
-    if (currentTime < new Date(cp1Time).getTime() || cp1Time === null) {
-      navigate("/profile");
-    }
-  } 
-  
-  if (userData.checkpointsstatus[0] === true) {
-    setFormSubmitStatus(true);
-  }
-  
-  form.reset(userData.checkpointone);
-} catch (error) {
-  await axios.get("/api/user/logout", {withCredentials:true});
-  navigate("/login");
-  console.log(error);
-}
+        if (cp1Time || cp1Time === null) {
+          const currentTime = new Date().getTime();
+          if (currentTime < new Date(cp1Time).getTime() || cp1Time === null) {
+            navigate("/profile");
+          }
+        }
+
+        if (userData.checkpointsstatus[0] === true) {
+          setFormSubmitStatus(true);
+        }
+
+        form.reset(userData.checkpointone);
+      } catch (error) {
+        await axios.get("/api/user/logout", { withCredentials: true });
+        navigate("/login");
+        console.log(error);
+      }
     }
     getUserDetails();
   }, []);
 
   const onFileChange = async (event) => {
-    const file = event.target.files[0]
-    if (!file) return
-    
-    
+    const file = event.target.files[0];
+    if (!file) return;
+
     // Validate file size and type
     // if (file.size > MAX_FILE_SIZE) {
     //   setFileUploadStatus({ status: 'error', progress: 0, filename: '', message:"Please upload less than 4MB file." })
     //   return
     // }
-    
+
     // if (!ALLOWED_FILE_TYPES.includes(file.type)) {
     //   setFileUploadStatus({ status: 'error', progress: 0, filename: '', message:"Only JPEG, JPG, PNG, PDF, PPT, and PPTX files are allowed." })
     //   return
     // }
-    
+
     try {
-      const formData = new FormData()
-      formData.append('file', file)
+      const formData = new FormData();
+      formData.append("file", file);
 
-      setFileUploadStatus({ status: 'uploading', progress: 0, filename: file.name, message:"Uploading..." })
+      setFileUploadStatus({
+        status: "uploading",
+        progress: 0,
+        filename: file.name,
+        message: "Uploading...",
+      });
 
-      const response = await axios.post('/api/user/upload-file', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
+      const response = await axios.post("/api/user/upload-file", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
         withCredentials: true,
         onUploadProgress: (progressEvent) => {
-          const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          setFileUploadStatus(prev => ({ ...prev, progress: percentCompleted }))
+          const percentCompleted = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total
+          );
+          setFileUploadStatus((prev) => ({
+            ...prev,
+            progress: percentCompleted,
+          }));
         },
-      })
+      });
 
       if (response.status === 200) {
-        setFileUploadStatus({ status: 'success', progress: 100, filename: response.data.filename.split("-").slice(1).join("-"), message:response.data.message || "File Uploaded Succesfully" })
-        form.setValue('file', response.data.filename)
+        setFileUploadStatus({
+          status: "success",
+          progress: 100,
+          filename: response.data.filename.split("-").slice(1).join("-"),
+          message: response.data.message || "File Uploaded Succesfully",
+        });
+        form.setValue("file", response.data.filename);
       }
     } catch (error) {
-      console.error(error)
-      setFileUploadStatus({ status: 'error', progress: 0, filename: '', message:error.response.data.message || "Error Uploading file please try again" })
+      console.error(error);
+      setFileUploadStatus({
+        status: "error",
+        progress: 0,
+        filename: "",
+        message:
+          error.response.data.message ||
+          "Error Uploading file please try again",
+      });
     }
-  }
+  };
 
   async function onSubmit(data) {
     try {
-      setLoading(true)
+      setLoading(true);
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (typeof value === "object") {
@@ -275,10 +313,12 @@ try {
       // for (let [key, value] of formData.entries()) {
       //   console.log(`${key}: ${value}`);
       // }
-      
-      const response = await axios.post(`/api/user/checkpoint-1`, formData,{withCredentials:true});
+
+      const response = await axios.post(`/api/user/checkpoint-1`, formData, {
+        withCredentials: true,
+      });
       if (response.status === 200) {
-        setLoading(false)
+        setLoading(false);
         setFormSubmitStatus(true);
         setCheckpointOneStatus(true);
         // setCheckpointsStatus(Array.push(true));
@@ -295,36 +335,39 @@ try {
         });
       }, 3000);
     } catch (error) {
-      setLoading(false)
+      setLoading(false);
       console.log(error);
       if (error.response.data.errors?.length > 0) {
-        const newErrors = {}; 
+        const newErrors = {};
         error.response.data.errors.forEach((errorItem) => {
           newErrors[errorItem.path] = errorItem.msg;
         });
         setErrors(newErrors);
-      }else if(error.response.status == 404){
+      } else if (error.response.status == 404) {
         setSubmitStatus({
           status: false,
-          message: error.response.data.message || "Error Submitting form. Try again later",
+          message:
+            error.response.data.message ||
+            "Error Submitting form. Try again later",
         });
         setTimeout(async () => {
-          await axios.get("/api/user/logout", {withCredentials:true});
-        navigate("/login");
+          await axios.get("/api/user/logout", { withCredentials: true });
+          navigate("/login");
         }, 2000);
-      }
-      else{
+      } else {
         setSubmitStatus({
           status: false,
-          message: error.response.data.message || "Error Submitting form. Try again later",
+          message:
+            error.response.data.message ||
+            "Error Submitting form. Try again later",
         });
-      }   
+      }
       setTimeout(() => {
         setSubmitStatus({
           status: "init",
           message: undefined,
         });
-        setErrors({})
+        setErrors({});
       }, 3000);
     }
   }
@@ -350,6 +393,17 @@ try {
     setProgress(progress);
   }, [watchedFields]);
 
+  // Access Redux state
+  const checkpointOneStatus = useSelector(
+    (state) => state.profile.checkpointsStatus[0] // Fetch the first checkpoint's status
+  );
+  const loadingDots = useLoadingDots();
+
+  useEffect(() => {
+    // Fetch user profile data on component mount
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#1E1E1E] rounded-xl p- border border-[#E6EAF0] dark:border-[#343434]">
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -359,7 +413,18 @@ try {
         ></div>
       </div>
       <div className="p-5">
-        <h1 className="font-semibold text-2xl mb-4 ">Checkpoint-1</h1>
+      <div className="mb-4">
+          <h3 className="text-xl md:text-2xl font-medium">
+            Checkpoint - 1{" "}
+            {loading ? (
+              <span className="text-blue-500">Loading{loadingDots}</span>
+            ) : checkpointOneStatus ? (
+              <span className="text-[#52e500]">(Completed)</span>
+            ) : (
+              <span className="text-red-500">(Incomplete)</span>
+            )}
+          </h3>
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             <FormField
@@ -386,8 +451,9 @@ try {
                 </FormItem>
               )}
             />
-            {errors.primaryIdea && <p className="text-red-500">{errors.primaryIdea}</p>}
-
+            {errors.primaryIdea && (
+              <p className="text-red-500">{errors.primaryIdea}</p>
+            )}
 
             <FormField
               control={form.control}
@@ -397,22 +463,25 @@ try {
                   <FormLabel>Attach File (Optional)</FormLabel>
                   <FormControl>
                     <div className="relative">
-                      <Input 
-                      disabled={fomSubmitStatus || fileUploadStatus.status==="success"}
-                        type="file" 
-                        onChange={onFileChange} 
-                        accept={ALLOWED_FILE_TYPES.join(',')}
+                      <Input
+                        disabled={
+                          fomSubmitStatus ||
+                          fileUploadStatus.status === "success"
+                        }
+                        type="file"
+                        onChange={onFileChange}
+                        accept={ALLOWED_FILE_TYPES.join(",")}
                         className="pr-10"
                       />
-                      {fileUploadStatus.status !== 'idle' && (
+                      {fileUploadStatus.status !== "idle" && (
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
-                          {fileUploadStatus.status === 'uploading' && (
+                          {fileUploadStatus.status === "uploading" && (
                             <div className="w-6 h-6 rounded-full border-2 border-blue-500 border-t-transparent animate-spin" />
                           )}
-                          {fileUploadStatus.status === 'success' && (
+                          {fileUploadStatus.status === "success" && (
                             <CheckCircle className="w-6 h-6 text-green-500" />
                           )}
-                          {fileUploadStatus.status === 'error' && (
+                          {fileUploadStatus.status === "error" && (
                             <XCircle className="w-6 h-6 text-red-500" />
                           )}
                         </div>
@@ -420,24 +489,30 @@ try {
                     </div>
                   </FormControl>
                   <FormMessage />
-                  {fileUploadStatus.status === 'uploading' && (
+                  {fileUploadStatus.status === "uploading" && (
                     <div className="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700 mt-2">
-                      <div 
-                        className="bg-blue-600 h-2.5 rounded-full" 
+                      <div
+                        className="bg-blue-600 h-2.5 rounded-full"
                         style={{ width: `${fileUploadStatus.progress}%` }}
                       ></div>
                     </div>
                   )}
-                  {fileUploadStatus.status === 'success' && (
-                    <p className="text-green-500 mt-2">{fileUploadStatus.filename + " " + fileUploadStatus.message|| "File Uploadedsuccessfully"}</p>
+                  {fileUploadStatus.status === "success" && (
+                    <p className="text-green-500 mt-2">
+                      {fileUploadStatus.filename +
+                        " " +
+                        fileUploadStatus.message || "File Uploadedsuccessfully"}
+                    </p>
                   )}
-                  {fileUploadStatus.status === 'error' && (
-                    <p className="text-red-500 mt-2">{fileUploadStatus.message||"Error uploading file. Please try again."}</p>
+                  {fileUploadStatus.status === "error" && (
+                    <p className="text-red-500 mt-2">
+                      {fileUploadStatus.message ||
+                        "Error uploading file. Please try again."}
+                    </p>
                   )}
                 </FormItem>
               )}
             />
-
 
             <FormField
               control={form.control}
@@ -449,7 +524,7 @@ try {
                   </FormLabel>
                   <FormControl>
                     <Textarea
-                    type="text"
+                      type="text"
                       placeholder="Your role during the hackathon"
                       // className="resize-none"
                       {...field}
@@ -515,7 +590,9 @@ try {
                 </FormItem>
               )}
             />
-            {errors.domainsWorkingOn && <p className="text-red-500">{errors.domainsWorkingOn}</p>}
+            {errors.domainsWorkingOn && (
+              <p className="text-red-500">{errors.domainsWorkingOn}</p>
+            )}
             <FormField
               control={form.control}
               name="technologiesUsed"
@@ -540,26 +617,35 @@ try {
                 </FormItem>
               )}
             />
-            {errors.technologiesUsed && <p className="text-red-500">{errors.technologiesUsed}</p>}
+            {errors.technologiesUsed && (
+              <p className="text-red-500">{errors.technologiesUsed}</p>
+            )}
 
             {/* {submitStatus && (
               <p className={`${submitStatus.status === true ? "text-green-500" : "text-red-500"}`}>
                 {submitStatus.message}
               </p>
             )} */}
-            {(fomSubmitStatus && !loading) && <p className= "text-green-500">Checkpoint-1 Submitted successfully.</p>}
+            {fomSubmitStatus && !loading && (
+              <p className="text-green-500">
+                Checkpoint-1 Submitted successfully.
+              </p>
+            )}
             <Button
               className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-200 dark:hover:bg-gray-300"
               type="submit"
               disabled={fomSubmitStatus || loading}
             >
-              {loading ? "Processing.." : fomSubmitStatus ? "Submitted" : "Submit"}
+              {loading
+                ? "Processing.."
+                : fomSubmitStatus
+                ? "Submitted"
+                : "Submit"}
             </Button>
           </form>
         </Form>
       </div>
     </div>
-
   );
 };
 

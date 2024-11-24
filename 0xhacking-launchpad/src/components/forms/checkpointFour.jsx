@@ -19,6 +19,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
 import { DataContext } from "@/contexts/DataProvider";
 
+import { useSelector, useDispatch } from "react-redux";
+import { fetchUserProfile } from "@/features/ProfileSlice"; // Update the path as per your project structure
+import useLoadingDots from "@/hooks/LoadingDots";
+
 const FormSchema = z.object({
   featureCompletion: z.enum(
     [
@@ -89,6 +93,7 @@ const FormSchema = z.object({
 });
 
 const CheckPointFour = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
     setCheckpointFourStatus,
@@ -225,6 +230,16 @@ const CheckPointFour = () => {
     setProgress(progress);
   }, [watchedFields]);
 
+  const checkpointFourStatus = useSelector(
+    (state) => state.profile.checkpointsStatus[3] // Fetch the fourth checkpoint's status
+  );
+  const loadingDots = useLoadingDots();
+
+  useEffect(() => {
+    // Fetch user profile data on component mount
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#1E1E1E] rounded-xl border border-[#E6EAF0] dark:border-[#343434]">
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -234,7 +249,21 @@ const CheckPointFour = () => {
         ></div>
       </div>
       <div className="p-5">
-      <h1 className="font-semibold text-2xl mb-4 ">Checkpoint-4</h1>
+      <div className="mb-4">
+          <h3 className="text-xl md:text-2xl font-medium">
+            Checkpoint - 4{" "}
+            {loading ? (
+              <span className="text-blue-500">Loading{loadingDots}</span>
+            ) : checkpointFourStatus ? (
+              <span className="text-[#52e500]">(Completed)</span>
+            ) : (
+              <span className="text-red-500">(Incomplete)</span>
+            )}
+          </h3>
+          {/* <p className="text-sm text-muted-foreground">
+            25th May 2024 22:00 to 26th May 2024 07:50
+          </p> */}
+        </div>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField

@@ -18,6 +18,10 @@ import {
 import { Input } from "@/components/ui/input";
 import { DataContext } from "@/contexts/DataProvider";
 
+import { useSelector, useDispatch } from "react-redux";
+import { fetchUserProfile } from "@/features/ProfileSlice"; // Update the path as per your project structure
+import useLoadingDots from "@/hooks/LoadingDots";
+
 const profileFormSchema = z.object({
   progressUpdate: z
     .array(
@@ -40,6 +44,7 @@ const profileFormSchema = z.object({
 });
 
 const CheckPointThree = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
     setCheckpointThreeStatus,
@@ -204,6 +209,16 @@ const CheckPointThree = () => {
     }
   }, [watchedFields, formSubmitStatus]);
 
+  const checkpointThreeStatus = useSelector(
+    (state) => state.profile.checkpointsStatus[2] // Fetch the third checkpoint's status
+  );
+  const loadingDots = useLoadingDots();
+
+  useEffect(() => {
+    // Fetch user profile data on component mount
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
   return (
     <div className="min-h-screen bg-white dark:bg-[#1E1E1E] rounded-xl  border border-[#E6EAF0] dark:border-[#343434]">
       <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -213,7 +228,21 @@ const CheckPointThree = () => {
         ></div>
       </div>
       <div className="p-5">
-        <h1 className="font-semibold text-2xl mb-4 ">Checkpoint-3</h1>
+      <div className="mb-4">
+          <h3 className="text-xl md:text-2xl font-medium">
+            Checkpoint - 3{" "}
+            {loading ? (
+              <span className="text-blue-500">Loading{loadingDots}</span>
+            ) : checkpointThreeStatus ? (
+              <span className="text-[#52e500]">(Completed)</span>
+            ) : (
+              <span className="text-red-500">(Incomplete)</span>
+            )}
+          </h3>
+          {/* <p className="text-sm text-muted-foreground">
+            25th May 2024 16:00 to 25th May 2024 22:00
+          </p> */}
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <div>

@@ -1,23 +1,26 @@
-import React, { useContext, useEffect, useState } from "react";
-import axios from "axios";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { NavLink } from "react-router-dom";
-import { DataContext } from "../../contexts/DataProvider";
+import {
+  fetchCheckpointStatus,
+  fetchCheckPointsTime,
+  setEnabledCheckpoints,
+  setBlinkingCheckpoint,
+} from "../../features/CheckpointSlice";
+import { fetchUserProfile } from "../../features/ProfileSlice";
 
 const Sidebar = () => {
-  const {
-    steps,
-    checkpointOneStatus,
-    checkpointTwoStatus,
-    checkpointThreeStatus,
-    checkpointFourStatus,
-    checkpointFiveStatus,
-  } = useContext(DataContext);
+  const dispatch = useDispatch();
 
-  const [checkPointsTimes, setCheckPointsTimes] = useState([]);
-  const [enabledCheckpoints, setEnabledCheckpoints] = useState(0);
-  const [blinkingCheckpoint, setBlinkingCheckpoint] = useState(0);
-  const [checkpointsStatus, setCheckpointsStatus] = useState([]);
   const [currentTime, setCurrentTime] = useState(new Date().getTime());
+
+  const steps = [
+    "Checkpoint 1",
+    "Checkpoint 2",
+    "Checkpoint 3",
+    "Checkpoint 4",
+    "Checkpoint 5",
+  ];
 
   const screens = [
     "checkpoint-1",
@@ -27,60 +30,46 @@ const Sidebar = () => {
     "checkpoint-5",
   ];
 
+  // Accessing Redux state from both slices
+  const {
+    checkpointsStatus,
+    checkPointsTimes,
+    enabledCheckpoints,
+    blinkingCheckpoint,
+    loading,
+    error,
+  } = useSelector((state) => state.countdown);
+
+  // Fetch checkpoint and user profile data from API
+  useEffect(() => {
+    dispatch(fetchCheckPointsTime());
+    dispatch(fetchCheckpointStatus());
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
+
   // Simulate a progress calculation for each checkpoint
-  const calculateProgress = (start, end) => {
+  const calculateProgress = (start, end, index) => {
     const totalDuration = end - start;
     const elapsedTime = currentTime - start;
 
     if (elapsedTime <= 0) return 0;
     if (elapsedTime >= totalDuration) return 100;
+
+    if (index === checkPointsTimes.length - 1) {
+      // For the last checkpoint, calculate progress based on the current time
+      return (elapsedTime / totalDuration) * 100;
+    }
+  
     return (elapsedTime / totalDuration) * 100;
   };
 
-  // Dummy data for checkpoint times (simulated start and end times)
-  const getCheckPointsTime = () => {
-    const now = new Date().getTime();
-    const dummyTimes = [
-      { start: now, end: now + 20 * 1000 }, // Checkpoint 1 (5 seconds)
-      { start: now + 20 * 1000, end: now + 40 * 1000 }, // Checkpoint 2 (5 seconds)
-      { start: now + 40 * 1000, end: now + 80 * 1000 }, // Checkpoint 3 (5 seconds)
-      { start: now + 80 * 1000, end: now + 120 * 1000 }, // Checkpoint 4 (5 seconds)
-      { start: now + 120 * 1000, end: now + 160 * 1000 }, // Checkpoint 4 (5 seconds)
-    ];
-
-    setCheckPointsTimes(dummyTimes);
-  };
-
-  // Fetching checkpoint statuses (dummy for testing)
-  useEffect(() => {
-    async function fetchCheckpointsStatus() {
-      try {
-        // Simulating API response
-        const dummyStatus = [true, false, false, false, false]; // Example status
-        setCheckpointsStatus(dummyStatus);
-      } catch (error) {
-        console.error("Error fetching checkpoint status:", error);
-      }
-    }
-    fetchCheckpointsStatus();
-  }, [
-    checkpointOneStatus,
-    checkpointTwoStatus,
-    checkpointThreeStatus,
-    checkpointFourStatus,
-    checkpointFiveStatus,
-  ]);
-
-  useEffect(() => {
-    getCheckPointsTime(); // Load the dummy data when component mounts
-  }, []);
-
+  // Update enabled checkpoints based on time
   const updateEnabledCheckpoints = () => {
     const currentTime = new Date().getTime();
     let enabledCount = 0;
 
     for (let i = 0; i < checkPointsTimes.length; i++) {
-      if (currentTime >= checkPointsTimes[i].start) {
+      if (currentTime >= checkPointsTimes[i]) {
         enabledCount = i + 1;
       } else {
         break;
@@ -88,11 +77,12 @@ const Sidebar = () => {
     }
 
     if (enabledCount !== enabledCheckpoints) {
-      setBlinkingCheckpoint(enabledCount);
-      setEnabledCheckpoints(enabledCount);
+      dispatch(setBlinkingCheckpoint(enabledCount));
+      dispatch(setEnabledCheckpoints(enabledCount));
     }
   };
 
+  // Update current time and enabled checkpoints every second
   useEffect(() => {
     if (checkPointsTimes.length > 0) {
       const interval = setInterval(() => {
@@ -101,7 +91,7 @@ const Sidebar = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [checkPointsTimes]);
+  }, [checkPointsTimes, enabledCheckpoints]);
 
   return (
     <aside className="md:fixed top-28 overflow-y-auto h-[calc(100vh-135px)] w-[200px] bg-white dark:bg-[#1E1E1E] shadow-md rounded-xl border border-[#E6EAF0] dark:border-[#343434]">
@@ -110,39 +100,65 @@ const Sidebar = () => {
           <div className="text-xl font-semibold">Checkpoints</div>
           <ul className="space-y-4">
             {steps.map((step, index) => {
-              const progress =
-                checkPointsTimes[index] &&
-                calculateProgress(
-                  checkPointsTimes[index].start,
-                  checkPointsTimes[index].end
-                );
+              // Check if the checkpoint is completed
+              const isCheckpointCompleted = checkpointsStatus[index];
 
+              // For incomplete checkpoints, calculate progress
+              const nextCheckpointTime = checkPointsTimes[index + 1] || currentTime;
+              const progress = isCheckpointCompleted
+                ? 100 // If completed, progress is 100%
+                :calculateProgress(
+                  checkPointsTimes[index],
+                  nextCheckpointTime,
+                  index
+                );
               return (
-                <li key={index} className={`text-sm xl:text-lg`}>
-                  <div
-                    className="w-[4.3rem] h-[4.3rem] rounded-full flex items-center justify-center relative"
-                    style={{
-                      background: `conic-gradient(
-                          #07C271 ${progress || 0}%, 
+                <li
+                  key={index}
+                  style={{
+                    background: isCheckpointCompleted
+                      ? "#07C271" // Green if checkpoint is completed
+                      : `conic-gradient(
+                          #07C271 ${progress || 0}%,
                           #F4F4F6 ${progress || 0}% 100%
-                        )`,
-                      transition: "background 0.5s linear",
-                    }}
-                  >
-                    <NavLink to={`/${screens[index]}`}>
-                      <button
-                        disabled={index >= enabledCheckpoints}
-                        className={`w-16 h-16 rounded-full flex items-center justify-center bg-[#F4F4F6] dark:bg-[#2C2C2E] ${
-                          index >= enabledCheckpoints
-                            ? "cursor-not-allowed opacity-60"
-                            : ""
-                        }`}
-                      >
-                        <p className="text-sm md:text-2xl font-bold text-[#07C271] dark:text-white">
-                          0{index + 1}
-                        </p>
-                      </button>
-                    </NavLink>
+                        )`, // Progress for incomplete
+                    transition: "background 0.5s linear",
+                  }}
+                  className={`w-[4.3rem] h-[4.3rem] rounded-full flex items-center justify-center relative ${
+                    checkpointsStatus[index]
+                      ? "bg-[#52e500] text-gray-700"
+                      : index === blinkingCheckpoint - 1
+                      ? ""
+                      : "text-black dark:text-white "
+                      
+                  }`}
+                >
+                  <div className="w-16 h-16 flex items-center justify-center rounded-full bg-[#F4F4F6] dark:bg-[#2C2C2E] text-[#07C271] dark:text-[#FFFFFF] ">
+                  <NavLink to={`/${screens[index]}`}>
+                    <button
+                      disabled={
+                        index >= enabledCheckpoints ||
+                        (index > 0 && !checkpointsStatus[index - 1])
+                      }
+                      className={`block w-16 h-16 rounded-full  ${
+                        index >= enabledCheckpoints ||
+                        (index > 0 && !checkpointsStatus[index - 1])
+                          ? "cursor-not-allowed opacity-50"
+                          : ""
+                      } ${
+                        checkpointsStatus[index]
+                          ? "bg-[#52e500] text-black"
+                          : index === blinkingCheckpoint - 1
+                          ? ""
+                          : " "
+                          
+                      }` }
+                    >
+                      <p className="text-sm md:text-2xl xl:text-3xl font-extrabold">
+                        {index + 1}
+                      </p>
+                    </button>
+                  </NavLink>
                   </div>
                 </li>
               );

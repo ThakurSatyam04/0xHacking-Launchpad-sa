@@ -20,6 +20,10 @@ import { Input } from "@/components/ui/input";
 import { DataContext } from "@/contexts/DataProvider";
 import { useNavigate } from "react-router-dom";
 
+import { useSelector, useDispatch } from "react-redux";
+import { fetchUserProfile } from "@/features/ProfileSlice"; // Update the path as per your project structure
+import useLoadingDots from "@/hooks/LoadingDots";
+
 const FormSchema = z.object({
   skillsInProject: z.array(z.string()).refine((value) => value.length >= 1, {
     message: "You have to select at least 1 skill.",
@@ -96,6 +100,7 @@ const additionalHelp = [
 ];
 
 const CheckPointFive = () => {
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const {
     setCheckpointFiveStatus,
@@ -223,25 +228,44 @@ try {
   }
 
   const [progress, setProgress] = useState(0); // State to track progress
+
   // Function to calculate progress
   const calculateProgress = (formValues) => {
     const fields = Object.keys(formValues);
+    const halfLength = Math.ceil(fields.length / 2); // Get half of the form fields
     const filledFields = fields.filter((field) => {
       const value = formValues[field];
       if (Array.isArray(value)) {
-        return value.length > 0;
+        return value.length > 0; // Array fields should have at least one value
       }
-      return value && value.trim() !== "";
+      return value && value.trim() !== ""; // String fields should not be empty
     });
-    return Math.round((filledFields.length / fields.length) * 100);
+  
+    // If half or more of the fields are filled, consider it 100% progress
+    const progress = Math.min(
+      Math.round((filledFields.length / halfLength) * 100), 
+      100
+    ); // Cap the progress at 100%
+    
+    return progress;
   };
-
+  
   // Watch form values to update progress
   const watchedFields = form.watch();
   useEffect(() => {
     const progress = calculateProgress(watchedFields);
     setProgress(progress);
   }, [watchedFields]);
+
+  const checkpointFiveStatus = useSelector(
+    (state) => state.profile.checkpointsStatus[4] // Fetch the fifth checkpoint's status
+  );
+  const loadingDots = useLoadingDots();
+
+  useEffect(() => {
+    // Fetch user profile data on component mount
+    dispatch(fetchUserProfile());
+  }, [dispatch]);
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#1E1E1E] rounded-xl border border-[#E6EAF0] dark:border-[#343434]">
@@ -252,7 +276,21 @@ try {
         ></div>
       </div>
       <div className="p-5">
-        <h1 className="font-semibold text-2xl mb-4 ">Checkpoint-5</h1>
+      <div className="mb-4">
+          <h3 className="text-xl md:text-2xl font-medium">
+            Checkpoint - 5{" "}
+            {loading ? (
+              <span className="text-blue-500">Loading{loadingDots}</span>
+            ) : checkpointFiveStatus ? (
+              <span className="text-[#52e500]">(Completed)</span>
+            ) : (
+              <span className="text-red-500">(Incomplete)</span>
+            )}
+          </h3>
+          {/* <p className="text-sm text-muted-foreground">
+            26th May 2024 07:55
+          </p> */}
+        </div>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Domains Working On */}
