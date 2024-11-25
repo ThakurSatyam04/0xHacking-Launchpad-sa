@@ -13,9 +13,19 @@ const Resource = () => {
         <h1 className="dark:text-white text-xl font-bold">
           Beyond Abstraction - A Router Protocol & Pivot Hacker House
         </h1>
-        <div>
-          <p className="text-xl">Saturday 30 November</p>
-          <span className="text-sm text-[#9CA3AF]">8:00 - 1 Dec 18:30</span>
+        <div className="flex gap-3 items-center justify-center">
+          <div className="w-11 h-11 flex flex-col items-center justify-around rounded-md border border-gray-400 dark:border-[#343434]">
+            <div className="h-5 w-full bg-[#07C271] text-[#FFFFFF] rounded-t-md flex justify-center items-center">
+              <span>Nov</span>
+            </div>
+            <div>
+              <span className="text-[#3A3A3C] font-bold dark:text-[#FFFFFF]">30</span>
+            </div>
+          </div>
+          <div>
+            <p className="text-xl">Saturday 30 November</p>
+            <span className="text-sm text-[#9CA3AF]">8:00 - 1 Dec 18:30</span>
+          </div>
         </div>
       </div>
       <hr className="dark:border-gray-700"/>
@@ -46,13 +56,6 @@ const Resource = () => {
           items={["Option 1", "Option 2", "Option 3", "Option 4"]}
           isOpen={openDropdownIndex === 3}
           onToggle={() => toggleDropdown(3)}
-          // onSelect={handleSelect}
-        />
-        <ResourceDropdown
-          label="Hackathon Timeline"
-          items={["Option 1", "Option 2", "Option 3", "Option 4"]}
-          isOpen={openDropdownIndex === 4}
-          onToggle={() => toggleDropdown(4)}
           // onSelect={handleSelect}
         />
       </div>

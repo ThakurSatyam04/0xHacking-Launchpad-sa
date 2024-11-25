@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -23,8 +23,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-import { DataContext } from "@/contexts/DataProvider";
 import { CheckCircle, XCircle } from "lucide-react";
+import {setCheckpointStatus, setCheckpointsCompleted} from "../../features/ProfileSlice"
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ALLOWED_FILE_TYPES = [
@@ -157,16 +157,12 @@ const domainsWorkingOn = [
 
 const CheckPointOne = () => {
   const dispatch = useDispatch();
+const {checkpointsCompleted, checkpointsStatus} = useSelector((state) => state.profile)
   const [fileUploadStatus, setFileUploadStatus] = useState({
     status: "idle",
     message: "",
   });
   const navigate = useNavigate();
-  const {
-    setCheckpointOneStatus,
-    checkpointsCompleted,
-    setCheckpointsCompleted,
-  } = useContext(DataContext);
   const [fomSubmitStatus, setFormSubmitStatus] = useState(false);
   const [file, setFile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -320,13 +316,14 @@ const CheckPointOne = () => {
       if (response.status === 200) {
         setLoading(false);
         setFormSubmitStatus(true);
-        setCheckpointOneStatus(true);
+        dispatch(setCheckpointStatus({ index: 0, status: true })); ;
         // setCheckpointsStatus(Array.push(true));
-        setCheckpointsCompleted(checkpointsCompleted + 1);
+        dispatch(setCheckpointsCompleted(checkpointsCompleted + 1));
         setSubmitStatus({
           status: true,
           message: response.data.message,
         });
+        window.location.reload();
       }
       setTimeout(() => {
         setSubmitStatus({

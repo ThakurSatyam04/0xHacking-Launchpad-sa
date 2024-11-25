@@ -1,4 +1,4 @@
-import  { useContext, useEffect, useState } from "react";
+import  {useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -17,11 +17,11 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 
-import { DataContext } from "@/contexts/DataProvider";
 import { useNavigate } from "react-router-dom";
 
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUserProfile } from "@/features/ProfileSlice"; // Update the path as per your project structure
+import {setCheckpointStatus, setCheckpointsCompleted} from "../../features/ProfileSlice"
 import useLoadingDots from "@/hooks/LoadingDots";
 
 const FormSchema = z.object({
@@ -101,12 +101,9 @@ const additionalHelp = [
 
 const CheckPointFive = () => {
   const dispatch = useDispatch();
+  const {checkpointsCompleted} = useSelector((state) => state.profile)
+
   const navigate = useNavigate();
-  const {
-    setCheckpointFiveStatus,
-    checkpointsCompleted,
-    setCheckpointsCompleted,
-  } = useContext(DataContext);
   const [formSubmitStatus, setFormSubmitStatus] = useState(false);
   const [showOtherInput, setShowOtherInput] = useState({
     domains: false,
@@ -177,12 +174,13 @@ try {
       if (response.status === 200) {
         setLoading(false)
         setFormSubmitStatus(true);
-        setCheckpointFiveStatus(true);
-        setCheckpointsCompleted(checkpointsCompleted + 1);
+        dispatch(setCheckpointStatus({ index: 2, status: true })); 
+        dispatch(setCheckpointsCompleted(checkpointsCompleted + 1));
         setSubmitStatus({
           status: true,
           message: response.data.message,
         });
+        window.location.reload();
       }
       setTimeout(() => {
         setSubmitStatus({

@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
@@ -17,9 +17,9 @@ import {
 } from "@/components/ui/form";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-import { DataContext } from "@/contexts/DataProvider";
 import { useSelector, useDispatch } from "react-redux";
 import { fetchUserProfile } from "../../features/ProfileSlice"; // Update the path as per your project structure
+import {setCheckpointStatus, setCheckpointsCompleted} from "../../features/ProfileSlice"
 import useLoadingDots from "@/hooks/LoadingDots";
 
 const FormSchema = z.object({
@@ -64,12 +64,8 @@ const FormSchema = z.object({
 
 const CheckPointTwo = () => {
   const dispatch = useDispatch();
+  const {checkpointsCompleted} = useSelector((state) => state.profile)
   const navigate = useNavigate();
-  const {
-    setCheckpointTwoStatus,
-    checkpointsCompleted,
-    setCheckpointsCompleted,
-  } = useContext(DataContext);
   const [fomSubmitStatus, setFormSubmitStatus] = useState(false);
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState({})
@@ -127,12 +123,13 @@ const CheckPointTwo = () => {
       if (response.status === 200) {
         setLoading(false)
         setFormSubmitStatus(true);
-        setCheckpointTwoStatus(true);
-        setCheckpointsCompleted(checkpointsCompleted + 1);
+        dispatch(setCheckpointStatus({ index: 1, status: true })); 
+        dispatch(setCheckpointsCompleted(checkpointsCompleted + 1));
         setSubmitStatus({
           status: true,
           message: response.data.message,
         });
+        window.location.reload();
       }
       setTimeout(() => {
         setSubmitStatus({

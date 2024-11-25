@@ -16,9 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { DataContext } from "@/contexts/DataProvider";
 
 import { useSelector, useDispatch } from "react-redux";
+import {setCheckpointStatus, setCheckpointsCompleted} from "../../features/ProfileSlice"
 import { fetchUserProfile } from "@/features/ProfileSlice"; // Update the path as per your project structure
 import useLoadingDots from "@/hooks/LoadingDots";
 
@@ -45,12 +45,8 @@ const profileFormSchema = z.object({
 
 const CheckPointThree = () => {
   const dispatch = useDispatch();
+  const {checkpointsCompleted} = useSelector((state) => state.profile)
   const navigate = useNavigate();
-  const {
-    setCheckpointThreeStatus,
-    checkpointsCompleted,
-    setCheckpointsCompleted,
-  } = useContext(DataContext);
   const [formSubmitStatus, setFormSubmitStatus] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState({});
@@ -130,12 +126,13 @@ const CheckPointThree = () => {
       if (response.status === 200) {
         setLoading(false);
         setFormSubmitStatus(true);
-        setCheckpointThreeStatus(true);
-        setCheckpointsCompleted(checkpointsCompleted + 1);
+        dispatch(setCheckpointStatus({ index: 2, status: true })); ;
+        dispatch(setCheckpointsCompleted(checkpointsCompleted + 1));
         setSubmitStatus({
           status: true,
           message: response.data.message,
         });
+        window.location.reload();
       }
       setTimeout(() => {
         setSubmitStatus({

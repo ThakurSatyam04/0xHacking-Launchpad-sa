@@ -6,10 +6,14 @@ export const fetchUserProfile = createAsyncThunk(
   "profile/fetchUserProfile",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await axios.get(`/api/user/auth`, { withCredentials: true });
+      const response = await axios.get(`/api/user/auth`, {
+        withCredentials: true,
+      });
       return response.data; // API response contains the user and team data
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Failed to fetch profile");
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch profile"
+      );
     }
   }
 );
@@ -18,10 +22,14 @@ export const updateUserProfile = createAsyncThunk(
   "profile/updateUserProfile",
   async (formData, { rejectWithValue }) => {
     try {
-      const response = await axios.post(`/api/user/profile`, formData, { withCredentials: true });
+      const response = await axios.post(`/api/user/profile`, formData, {
+        withCredentials: true,
+      });
       return response.data;
     } catch (error) {
-      return rejectWithValue(error.response?.data?.message || "Failed to update profile");
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to update profile"
+      );
     }
   }
 );
@@ -30,29 +38,76 @@ export const updateUserProfile = createAsyncThunk(
 const ProfileSlice = createSlice({
   name: "profile",
   initialState: {
-    userData: null, // For user-specific details
-    profileData: null, // For profile details like bio and URLs
-    teamData: [], // For team-related data
+    userData: null, 
+    profileData: null,
+    teamData: [],
     profileStatus: false,
     location: {
       state: null,
       city: null,
       country: null,
-    }, // Structured location data
-    checkpointOne: null, // For checkpoint one data
-    checkpointTwo: null, // For checkpoint one data
-    checkpointThree: null, // For checkpoint one data
-    checkpointFour: null, // For checkpoint one data
-    checkpointFive: null, // For checkpoint one data
-    checkpointsStatus: [], // Status of checkpoints (boolean array)
+    }, 
+    checkpointOne: {
+      primaryIdea: "",
+      role: "",
+      domainsWorkingOn: [], 
+      technologiesUsed: "",
+      file: "",
+    },
+    checkpointTwo: {
+      projectStage: "",
+      teamCollaboration: "",
+      mentorshipSupport: "",
+      timeline: "",
+      resources: "",
+    },
+    checkpointThree: {
+      progressUpdate: [],
+      technicalChallenges: [],
+    },
+    checkpointFour: {
+      featureCompletion: "", 
+      integrationTesting: "", 
+      userExperience: "", 
+      qualityAssurance: "", 
+      presentationPreparation: "", 
+      teamReadiness: "",
+    },
+    checkpointFive: {
+      skillsInProject: [],
+      otherSkillsInProject: "", 
+      skillsToLearn: [], 
+      otherSkillsToLearn: "", 
+      neededTools: [],
+      otherNeededTools: "", 
+      challengesFaced: [], 
+      otherChallengesFaced: "", 
+      additionalHelp: [], 
+      otherAdditionalHelp: "", 
+      createdAt: null, 
+    },    
+    checkpointsStatus: [], 
     loading: false,
     error: null,
     submitStatus: "init",
+    checkpointsCompleted: 0,
   },
   reducers: {
     resetSubmitStatus(state) {
       state.submitStatus = "init";
       state.error = null;
+    },
+    setProfileData: (state, action) => {
+      state.userProfile = action.payload;
+    },
+    setFileUploadStatus: (state, action) => {
+      state.fileUploadStatus = action.payload;
+    },
+    setCheckpointsCompleted: (state, action) => {
+      state.checkpointsCompleted = action.payload;
+    },
+    setCheckpointStatus: (state, action) => {
+      state.checkpointsStatus[action.payload.index] = action.payload.status;
     },
   },
   extraReducers: (builder) => {
@@ -63,34 +118,98 @@ const ProfileSlice = createSlice({
       })
       .addCase(fetchUserProfile.fulfilled, (state, action) => {
         state.loading = false;
-
-        // Parsing the API response
         const { userData, user, teamData } = action.payload;
-
-        // User-specific data
         state.userData = userData;
-
-        // User profile information
         state.profileData = user.profile || null;
-
-        // Team details
         state.teamData = teamData || [];
-
-        // Other details
         state.profileStatus = user.profileStatus || false;
-        // Location details (structured parsing)
         const { state: userState, city, country } = user.location || {};
         state.location = {
           state: userState || null,
           city: city || null,
           country: country || null,
         };
-        state.checkpointOne = user.checkpointone || null;
-        state.checkpointTwo = user.checkpointtwo || null;
-        state.checkpointThree = user.checkpointthree || null;
-        state.checkpointFour = user.checkpointfour || null;
-        state.checkpointFive = user.checkpointfive || null;
+        // Checkpoint One
+        const {
+          state: primaryIdea,
+          role,
+          domainsWorkingOn,
+          technologiesUsed,
+          file,
+        } = user.checkpointone || {};
+        state.checkpointOne = {
+          primaryIdea: primaryIdea || "",
+          role: role || "",
+          domainsWorkingOn: domainsWorkingOn || [],
+          technologiesUsed: technologiesUsed || "",
+          file: file || "",
+        };
+        const {
+          projectStage,
+          teamCollaboration,
+          mentorshipSupport,
+          timeline,
+          resources,
+        } = user.checkpointtwo || {};
+        state.checkpointTwo = {
+          projectStage: projectStage || "",
+          teamCollaboration: teamCollaboration || "",
+          mentorshipSupport: mentorshipSupport || "",
+          timeline: timeline || "",
+          resources: resources || "",
+        };
 
+        const { progressUpdate, technicalChallenges } =
+          user.checkpointthree || {};
+        state.checkpointThree = {
+          progressUpdate: progressUpdate?.map((item) => item.value) || [],
+          technicalChallenges:
+            technicalChallenges?.map((item) => item.value) || [],
+        };
+        const {
+          featureCompletion,
+          integrationTesting,
+          userExperience,
+          qualityAssurance,
+          presentationPreparation,
+          teamReadiness,
+        } = user.checkpointfour || {};
+        
+        state.checkpointFour = {
+          featureCompletion: featureCompletion || "",
+          integrationTesting: integrationTesting || "",
+          userExperience: userExperience || "",
+          qualityAssurance: qualityAssurance || "",
+          presentationPreparation: presentationPreparation || "",
+          teamReadiness: teamReadiness || "",
+        };
+        const {
+          skillsInProject,
+          otherSkillsInProject,
+          skillsToLearn,
+          otherSkillsToLearn,
+          neededTools,
+          otherNeededTools,
+          challengesFaced,
+          otherChallengesFaced,
+          additionalHelp,
+          otherAdditionalHelp,
+          createdAt,
+        } = user.checkpointfive || {};
+        
+        state.checkpointFive = {
+          skillsInProject: skillsInProject || [],
+          otherSkillsInProject: otherSkillsInProject || "",
+          skillsToLearn: skillsToLearn || [],
+          otherSkillsToLearn: otherSkillsToLearn || "",
+          neededTools: neededTools || [],
+          otherNeededTools: otherNeededTools || "",
+          challengesFaced: challengesFaced || [],
+          otherChallengesFaced: otherChallengesFaced || "",
+          additionalHelp: additionalHelp || [],
+          otherAdditionalHelp: otherAdditionalHelp || "",
+        };
+      
         // Checkpoints status array
         state.checkpointsStatus = user.checkpointsstatus || [];
       })
@@ -117,4 +236,10 @@ const ProfileSlice = createSlice({
 });
 
 export const { resetSubmitStatus } = ProfileSlice.actions;
+export const {
+  setProfileData,
+  setCheckpointStatus,
+  setCheckpointsCompleted,
+  setFileUploadStatus,
+} = ProfileSlice.actions;
 export default ProfileSlice.reducer;
