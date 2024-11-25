@@ -38,7 +38,7 @@ export const updateUserProfile = createAsyncThunk(
 const ProfileSlice = createSlice({
   name: "profile",
   initialState: {
-    userData: null, 
+    userData: null, // For user-specific details
     profileData: null,
     teamData: [],
     profileStatus: false,

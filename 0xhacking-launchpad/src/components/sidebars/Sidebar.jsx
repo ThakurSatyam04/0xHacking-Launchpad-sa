@@ -8,6 +8,7 @@ import {
   setBlinkingCheckpoint,
 } from "../../features/CheckpointSlice";
 import { fetchUserProfile } from "../../features/ProfileSlice";
+import Countdown from "./Countdown";
 
 const Sidebar = () => {
   const dispatch = useDispatch();
@@ -38,7 +39,6 @@ const Sidebar = () => {
     duration,
     startTime,
   } = useSelector((state) => state.countdown);
-
 
   // Fetch checkpoint and user profile data from API
   useEffect(() => {
@@ -98,7 +98,11 @@ const Sidebar = () => {
     return unit < 10 ? `0${unit}` : unit;
   }
 
-  const [timeLeft, setTimeLeft] = useState({ hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
 
   useEffect(() => {
     // Calculate the end time by adding duration to the start time (both in milliseconds)
@@ -108,7 +112,7 @@ const Sidebar = () => {
 
     // Function to update the time left
     const updateTimeLeft = () => {
-      const currentTime = new Date().getTime(); 
+      const currentTime = new Date().getTime();
       const remainingTime = hackathonEndTime - currentTime;
 
       if (remainingTime <= 0) {
@@ -116,7 +120,9 @@ const Sidebar = () => {
         setTimeLeft({ hours: 0, minutes: 0, seconds: 0 });
       } else {
         const hours = Math.floor(remainingTime / (1000 * 60 * 60)); // Calculate hours
-        const minutes = Math.floor((remainingTime % (1000 * 60 * 60)) / (1000 * 60)); // Calculate minutes
+        const minutes = Math.floor(
+          (remainingTime % (1000 * 60 * 60)) / (1000 * 60)
+        ); // Calculate minutes
         const seconds = Math.floor((remainingTime % (1000 * 60)) / 1000); // Calculate seconds
         setTimeLeft({ hours, minutes, seconds });
       }
@@ -199,16 +205,8 @@ const Sidebar = () => {
               );
             })}
           </ul>
-          <div className="w-32 h-16 mt-8">
-            <div className="w-32 h-16 rounded-t-full border-4 border-b-0 border-green-500 overflow-hidden flex items-end justify-center">
-              <span className="text-lg font-bold">
-                {timeLeft
-                  ? `${formatTime(timeLeft.hours)}:${formatTime(
-                      timeLeft.minutes
-                    )}:${formatTime(timeLeft.seconds)}`
-                  : "00:00:00"}
-              </span>
-            </div>
+          <div className="font-bold text-xl">
+              <Countdown />
           </div>
         </div>
       </div>
